@@ -1,0 +1,564 @@
+<?php
+if (!defined('ABSPATH')) {
+    die('Direct access forbidden.');
+}
+
+// Enable WordPress debug logging
+if (!defined('WP_DEBUG')) {
+    define('WP_DEBUG', true);
+}
+if (!defined('WP_DEBUG_LOG')) {
+    define('WP_DEBUG_LOG', true);
+}
+if (!defined('WP_DEBUG_DISPLAY')) {
+    define('WP_DEBUG_DISPLAY', false);
+}
+
+error_log("Functions.php is being loaded");
+
+function log_message($message) {
+    error_log(date('[Y-m-d H:i:s] ') . $message . "\n", 3, WP_CONTENT_DIR . '/debug.log');
+}
+
+// Enqueue parent and child styles
+function child_enqueue_styles() {
+    wp_enqueue_style('parent-style', get_template_directory_uri() . '/style.css');
+    wp_enqueue_style('child-style', get_stylesheet_uri());
+    
+    wp_enqueue_style('product-comparison-style', get_stylesheet_directory_uri() . '/product-comparison.css', array(), '1.1');
+    wp_enqueue_script('product-comparison-script', get_stylesheet_directory_uri() . '/product-comparison.js', array('jquery'), '1.1', true);
+
+    log_message("Styles enqueued: parent-style and child-style");
+}
+add_action('wp_enqueue_scripts', 'child_enqueue_styles');
+
+// Enqueue product comparison styles
+function enqueue_product_comparison_styles() {
+    if (is_singular('post') && has_post_format('product-comparison')) {
+        wp_enqueue_style('product-comparison-style', get_stylesheet_directory_uri() . '/product-comparison.css', array(), filemtime(get_stylesheet_directory() . '/product-comparison.css'));
+        log_message("Product comparison styles enqueued for post ID: " . get_the_ID());
+    }
+}
+add_action('wp_enqueue_scripts', 'enqueue_product_comparison_styles');
+
+// Register product comparison template
+function register_product_comparison_template($templates) {
+    $templates['single-product-comparison.php'] = 'Product Comparison';
+    log_message("Product comparison template registered");
+    return $templates;
+}
+add_filter('theme_post_templates', 'register_product_comparison_template');
+
+function register_multiproduct_template($templates) {
+    $templates['single-multiproduct.php'] = 'MultiProduct';
+    log_message("MultiProduct template registered");
+    return $templates;
+}
+add_filter('theme_post_templates', 'register_multiproduct_template');
+
+// Register product review template
+function register_product_review_template($templates) {
+    $templates['page-product-review.php'] = 'Product Review';
+    log_message("Product review template registered");
+    return $templates;
+}
+add_filter('theme_post_templates', 'register_product_review_template');
+
+add_action('admin_menu', 'enable_custom_fields_metabox');
+function enable_custom_fields_metabox() {
+    add_meta_box('postcustom', 'Custom Fields', 'post_custom_meta_box', 'post', 'normal', 'high');
+}
+
+// Set template for product comparison and product review posts
+function set_custom_template($template) {
+    if (is_singular('post')) {
+        $template_slug = get_page_template_slug();
+        if ($template_slug === 'single-product-comparison.php' || $template_slug === 'single-multiproduct.php' || $template_slug === 'page-product-review.php') {
+            $new_template = locate_template(array($template_slug));
+            if (!empty($new_template)) {
+                log_message("Template set for post ID: " . get_the_ID() . ", Template: " . $template_slug);
+                return $new_template;
+            } else {
+                log_message("Template not found for post ID: " . get_the_ID() . ", Template: " . $template_slug);
+            }
+        }
+    }
+    return $template;
+}
+add_filter('single_template', 'set_custom_template');
+
+function enqueue_multiproduct_styles_scripts() {
+    if (is_singular('post') && get_page_template_slug() === 'single-multiproduct.php') {
+        wp_enqueue_style('multiproduct-style', get_stylesheet_directory_uri() . '/multiproduct.css', array(), filemtime(get_stylesheet_directory() . '/multiproduct.css'));
+        wp_enqueue_script('multiproduct-script', get_stylesheet_directory_uri() . '/multiproduct.js', array('jquery'), filemtime(get_stylesheet_directory() . '/multiproduct.js'), true);
+        log_message("MultiProduct styles and scripts enqueued for post ID: " . get_the_ID());
+    }
+}
+add_action('wp_enqueue_scripts', 'enqueue_multiproduct_styles_scripts');
+
+function register_custom_fields() {
+    $custom_fields = array(
+        'disclosure_top', 'Featured_Image', 'subtitle', 'benefits_nav_text',
+        'ingredients_nav_text', 'top_5_nav_text', 'disclosure', 'benefits_title',
+        'benefits_subtitle', 'benefits_content', 'usage_title', 'usage_content',
+        'ingredients_to_look_for_title', 'ingredients_to_look_for_content',
+        'ingredients_to_avoid_title', 'ingredients_to_avoid_content',
+        'considerations_title', 'considerations_content', 'top_products_title',
+        'num_products', 'results_disclaimer', 'citations_title', 'citations',
+        'back_to_top_text', 'primary_color', 'secondary_color', 'tertiary_color'
+    );
+
+    foreach ($custom_fields as $field) {
+        register_post_meta('post', $field, array(
+            'show_in_rest' => true,
+            'single' => true,
+            'type' => 'string',
+        ));
+    }
+    // Register product-specific custom fields
+    $product_fields = array(
+        'name', 'brand', 'link', 'image', 'image_width', 'rating_image',
+        'rating', 'grade', 'pros', 'cons', 'bottom_line'
+    );
+
+    for ($i = 1; $i <= 5; $i++) {
+        foreach ($product_fields as $field) {
+            register_post_meta('post', "product_{$i}_{$field}", array(
+                'show_in_rest' => true,
+                'single' => true,
+                'type' => 'string',
+            ));
+        }
+    }
+}
+add_action('init', 'register_custom_fields');
+
+function add_product_review_meta_boxes() {
+    log_message("Attempting to add product review meta box");
+    add_meta_box('product_review_meta', 'Product Review Details', 'product_review_meta_callback', 'post', 'normal', 'high');
+    log_message("Product review meta box added");
+}
+add_action('add_meta_boxes', 'add_product_review_meta_boxes');
+
+function product_review_meta_callback($post) {
+    log_message("Starting product_review_meta_callback for post ID: " . $post->ID);
+
+    wp_nonce_field('product_review_meta_box', 'product_review_meta_box_nonce');
+
+    $intro = get_post_meta($post->ID, '_intro_paragraph', true);
+    $main_image_id = get_post_meta($post->ID, '_main_image_id', true);
+    $num_products = get_post_meta($post->ID, '_num_products', true) ?: 5;
+    $product_reviews = get_post_meta($post->ID, '_product_reviews', true) ?: array();
+    $conclusion = get_post_meta($post->ID, '_conclusion', true);
+    $cta_text = get_post_meta($post->ID, '_cta_text', true);
+    $cta_link = get_post_meta($post->ID, '_cta_link', true);
+
+    log_message("Retrieved meta data for post ID: " . $post->ID);
+
+    ?>
+    <p>
+        <label for="intro_paragraph">Intro Paragraph:</label><br>
+        <textarea id="intro_paragraph" name="intro_paragraph" rows="4" cols="50"><?php echo esc_textarea($intro); ?></textarea>
+    </p>
+    <p>
+        <label for="main_image">Main Image:</label><br>
+        <input type="hidden" id="main_image_id" name="main_image_id" value="<?php echo esc_attr($main_image_id); ?>">
+        <button type="button" class="upload_image_button button">Upload Image</button>
+        <div id="main_image_preview">
+            <?php if ($main_image_id) echo wp_get_attachment_image($main_image_id, 'thumbnail'); ?>
+        </div>
+    </p>
+    <p>
+        <label for="num_products">Number of Products:</label>
+        <input type="number" id="num_products" name="num_products" value="<?php echo esc_attr($num_products); ?>" min="1" max="10">
+    </p>
+    <div id="product_reviews">
+        <h3>Product Reviews</h3>
+        <?php
+        for ($i = 0; $i < $num_products; $i++) {
+            $review = isset($product_reviews[$i]) ? $product_reviews[$i] : array();
+            $product_name = isset($review['product_name']) ? $review['product_name'] : '';
+            $product_image_id = isset($review['product_image_id']) ? $review['product_image_id'] : '';
+            $effectiveness = isset($review['effectiveness']) ? $review['effectiveness'] : '';
+            $safety = isset($review['safety']) ? $review['safety'] : '';
+            $price = isset($review['price']) ? $review['price'] : '';
+            $overall_rating = isset($review['overall_rating']) ? $review['overall_rating'] : '';
+            $product_description = isset($review['product_description']) ? $review['product_description'] : '';
+            ?>
+            <div class="product-review" <?php echo $i === 0 ? 'style="border: 2px solid #007cba; padding: 10px;"' : ''; ?>>
+                <h4>Product <?php echo $i + 1; ?><?php echo $i === 0 ? ' (Best Product)' : ''; ?></h4>
+                <p>
+                    <label>Product Name:</label><br>
+                    <input type="text" name="product_reviews[<?php echo $i; ?>][product_name]" value="<?php echo esc_attr($product_name); ?>">
+                </p>
+                <p>
+                    <label>Product Image:</label><br>
+                    <input type="hidden" name="product_reviews[<?php echo $i; ?>][product_image_id]" value="<?php echo esc_attr($product_image_id); ?>">
+                    <button type="button" class="upload_image_button button">Upload Image</button>
+                    <div class="product_image_preview">
+                        <?php if ($product_image_id) echo wp_get_attachment_image($product_image_id, 'thumbnail'); ?>
+                    </div>
+                </p>
+                <p>
+                    <label>Effectiveness:</label><br>
+                    <input type="text" name="product_reviews[<?php echo $i; ?>][effectiveness]" value="<?php echo esc_attr($effectiveness); ?>">
+                </p>
+                <p>
+                    <label>Safety:</label><br>
+                    <input type="text" name="product_reviews[<?php echo $i; ?>][safety]" value="<?php echo esc_attr($safety); ?>">
+                </p>
+                <p>
+                    <label>Price:</label><br>
+                    <input type="text" name="product_reviews[<?php echo $i; ?>][price]" value="<?php echo esc_attr($price); ?>">
+                </p>
+                <p>
+                    <label>Overall Rating:</label><br>
+                    <input type="text" name="product_reviews[<?php echo $i; ?>][overall_rating]" value="<?php echo esc_attr($overall_rating); ?>">
+                </p>
+                <p>
+                    <label>Product Description:</label><br>
+                    <textarea name="product_reviews[<?php echo $i; ?>][product_description]" rows="4" cols="50"><?php echo esc_textarea($product_description); ?></textarea>
+                </p>
+            </div>
+            <?php
+        }
+        ?>
+    </div>
+    <p>
+        <label for="conclusion">Conclusion:</label><br>
+        <textarea id="conclusion" name="conclusion" rows="4" cols="50"><?php echo esc_textarea($conclusion); ?></textarea>
+    </p>
+    <p>
+        <label for="cta_text">CTA Text:</label><br>
+        <input type="text" id="cta_text" name="cta_text" value="<?php echo esc_attr($cta_text); ?>">
+    </p>
+    <p>
+        <label for="cta_link">CTA Link:</label><br>
+        <input type="url" id="cta_link" name="cta_link" value="<?php echo esc_url($cta_link); ?>">
+    </p>
+    <script>
+    jQuery(document).ready(function($) {
+        log_message("jQuery ready function started");
+
+        function updateProductReviews() {
+            var numProducts = $('#num_products').val();
+            var currentReviews = $('#product_reviews .product-review').length;
+            
+            log_message("Updating product reviews. New number: " + numProducts + ", Current: " + currentReviews);
+
+            if (numProducts > currentReviews) {
+                for (var i = currentReviews; i < numProducts; i++) {
+                    var newReview = `
+                        <div class="product-review" ${i === 0 ? 'style="border: 2px solid #007cba; padding: 10px;"' : ''}>
+                            <h4>Product ${i + 1}${i === 0 ? ' (Best Product)' : ''}</h4>
+                            <p>
+                                <label>Product Name:</label><br>
+                                <input type="text" name="product_reviews[${i}][product_name]">
+                            </p>
+                            <p>
+                                <label>Product Image:</label><br>
+                                <input type="hidden" name="product_reviews[${i}][product_image_id]">
+                                <button type="button" class="upload_image_button button">Upload Image</button>
+                                <div class="product_image_preview"></div>
+                            </p>
+                            <p>
+                                <label>Effectiveness:</label><br>
+                                <input type="text" name="product_reviews[${i}][effectiveness]">
+                            </p>
+                            <p>
+                                <label>Safety:</label><br>
+                                <input type="text" name="product_reviews[${i}][safety]">
+                            </p>
+                            <p>
+                                <label>Price:</label><br>
+                                <input type="text" name="product_reviews[${i}][price]">
+                            </p>
+                            <p>
+                                <label>Overall Rating:</label><br>
+                                <input type="text" name="product_reviews[${i}][overall_rating]">
+                            </p>
+                            <p>
+                                <label>Product Description:</label><br>
+				<textarea name="product_reviews[${i}][product_description]" rows="4" cols="50"></textarea>
+				<?php
+if (!defined('ABSPATH')) {
+    die('Direct access forbidden.');
+}
+
+// Enable WordPress debug logging
+if (!defined('WP_DEBUG')) {
+    define('WP_DEBUG', true);
+}
+if (!defined('WP_DEBUG_LOG')) {
+    define('WP_DEBUG_LOG', true);
+}
+if (!defined('WP_DEBUG_DISPLAY')) {
+    define('WP_DEBUG_DISPLAY', false);
+}
+
+error_log("Functions.php is being loaded");
+
+function log_message($message) {
+    error_log(date('[Y-m-d H:i:s] ') . $message . "\n", 3, WP_CONTENT_DIR . '/debug.log');
+}
+
+// Enqueue parent and child styles
+function child_enqueue_styles() {
+    wp_enqueue_style('parent-style', get_template_directory_uri() . '/style.css');
+    wp_enqueue_style('child-style', get_stylesheet_uri());
+
+    wp_enqueue_style('product-comparison-style', get_stylesheet_directory_uri() . '/product-comparison.css', array(), '1.1');
+    wp_enqueue_script('product-comparison-script', get_stylesheet_directory_uri() . '/product-comparison.js', array('jquery'), '1.1', true);
+
+    log_message("Styles enqueued: parent-style and child-style");
+}
+add_action('wp_enqueue_scripts', 'child_enqueue_styles');
+
+// Enqueue product comparison styles
+function enqueue_product_comparison_styles() {
+    if (is_singular('post') && has_post_format('product-comparison')) {
+        wp_enqueue_style('product-comparison-style', get_stylesheet_directory_uri() . '/product-comparison.css', array(), filemtime(get_stylesheet_directory() . '/product-comparison.css'));
+        log_message("Product comparison styles enqueued for post ID: " . get_the_ID());
+    }
+}
+add_action('wp_enqueue_scripts', 'enqueue_product_comparison_styles');
+
+// Register product comparison template
+function register_product_comparison_template($templates) {
+    $templates['single-product-comparison.php'] = 'Product Comparison';
+    log_message("Product comparison template registered");
+    return $templates;
+}
+add_filter('theme_post_templates', 'register_product_comparison_template');
+
+function register_multiproduct_template($templates) {
+    $templates['single-multiproduct.php'] = 'MultiProduct';
+    log_message("MultiProduct template registered");
+    return $templates;
+}
+add_filter('theme_post_templates', 'register_multiproduct_template');
+
+// Register product review template
+function register_product_review_template($templates) {
+    $templates['page-product-review.php'] = 'Product Review';
+    log_message("Product review template registered");
+    return $templates;
+}
+add_filter('theme_post_templates', 'register_product_review_template');
+
+add_action('admin_menu', 'enable_custom_fields_metabox');
+function enable_custom_fields_metabox() {
+    add_meta_box('postcustom', 'Custom Fields', 'post_custom_meta_box', 'post', 'normal', 'high');
+}
+
+// Set template for product comparison and product review posts
+function set_custom_template($template) {
+    if (is_singular('post')) {
+        $template_slug = get_page_template_slug();
+        if ($template_slug === 'single-product-comparison.php' || $template_slug === 'single-multiproduct.php' || $template_slug === 'page-product-review.php') {
+            $new_template = locate_template(array($template_slug));
+            if (!empty($new_template)) {
+                log_message("Template set for post ID: " . get_the_ID() . ", Template: " . $template_slug);
+                return $new_template;
+            } else {
+                log_message("Template not found for post ID: " . get_the_ID() . ", Template: " . $template_slug);
+            }
+        }
+    }
+    return $template;
+}
+add_filter('single_template', 'set_custom_template');
+
+function enqueue_multiproduct_styles_scripts() {
+    if (is_singular('post') && get_page_template_slug() === 'single-multiproduct.php') {
+        wp_enqueue_style('multiproduct-style', get_stylesheet_directory_uri() . '/multiproduct.css', array(), filemtime(get_stylesheet_directory() . '/multiproduct.css'));
+        wp_enqueue_script('multiproduct-script', get_stylesheet_directory_uri() . '/multiproduct.js', array('jquery'), filemtime(get_stylesheet_directory() . '/multiproduct.js'), true);
+        log_message("MultiProduct styles and scripts enqueued for post ID: " . get_the_ID());
+    }
+}
+add_action('wp_enqueue_scripts', 'enqueue_multiproduct_styles_scripts');
+
+function register_custom_fields() {
+    $custom_fields = array(
+        'disclosure_top', 'Featured_Image', 'subtitle', 'benefits_nav_text',
+        'ingredients_nav_text', 'top_5_nav_text', 'disclosure', 'benefits_title',
+        'benefits_subtitle', 'benefits_content', 'usage_title', 'usage_content',
+        'ingredients_to_look_for_title', 'ingredients_to_look_for_content',
+        'ingredients_to_avoid_title', 'ingredients_to_avoid_content',
+        'considerations_title', 'considerations_content', 'top_products_title',
+        'num_products', 'results_disclaimer', 'citations_title', 'citations',
+        'back_to_top_text', 'primary_color', 'secondary_color', 'tertiary_color'
+    );
+
+    foreach ($custom_fields as $field) {
+        register_post_meta('post', $field, array(
+            'show_in_rest' => true,
+            'single' => true,
+            'type' => 'string',
+        ));
+    }
+    // Register product-specific custom fields
+    $product_fields = array(
+        'name', 'brand', 'link', 'image', 'image_width', 'rating_image',
+        'rating', 'grade', 'pros', 'cons', 'bottom_line'
+    );
+
+    for ($i = 1; $i <= 5; $i++) {
+        foreach ($product_fields as $field) {
+            register_post_meta('post', "product_{$i}_{$field}", array(
+                'show_in_rest' => true,
+                'single' => true,
+                'type' => 'string',
+            ));
+        }
+    }
+}
+add_action('init', 'register_custom_fields');
+
+function add_product_review_meta_boxes() {
+    log_message("Attempting to add product review meta box");
+    add_meta_box('product_review_meta', 'Product Review Details', 'product_review_meta_callback', 'post', 'normal', 'high');
+    log_message("Product review meta box added");
+}
+add_action('add_meta_boxes', 'add_product_review_meta_boxes');
+
+function product_review_meta_callback($post) {
+    log_message("Starting product_review_meta_callback for post ID: " . $post->ID);
+
+    wp_nonce_field('product_review_meta_box', 'product_review_meta_box_nonce');
+
+    $intro = get_post_meta($post->ID, '_intro_paragraph', true);
+    $main_image_id = get_post_meta($post->ID, '_main_image_id', true);
+    $num_products = get_post_meta($post->ID, '_num_products', true) ?: 5;
+    $product_reviews = get_post_meta($post->ID, '_product_reviews', true) ?: array();
+    $conclusion = get_post_meta($post->ID, '_conclusion', true);
+    $cta_text = get_post_meta($post->ID, '_cta_text', true);
+    $cta_link = get_post_meta($post->ID, '_cta_link', true);
+
+    log_message("Retrieved meta data for post ID: " . $post->ID);
+
+    ?>
+    <p>
+        <label for="intro_paragraph">Intro Paragraph:</label><br>
+        <textarea id="intro_paragraph" name="intro_paragraph" rows="4" cols="50"><?php echo esc_textarea($intro); ?></textarea>
+    </p>
+    <p>
+        <label for="main_image">Main Image:</label><br>
+        <input type="hidden" id="main_image_id" name="main_image_id" value="<?php echo esc_attr($main_image_id); ?>">
+        <button type="button" class="upload_image_button button">Upload Image</button>
+        <div id="main_image_preview">
+            <?php if ($main_image_id) echo wp_get_attachment_image($main_image_id, 'thumbnail'); ?>
+        </div>
+    </p>
+    <p>
+        <label for="num_products">Number of Products:</label>
+        <input type="number" id="num_products" name="num_products" value="<?php echo esc_attr($num_products); ?>" min="1" max="10">
+    </p>
+    <div id="product_reviews">
+        <h3>Product Reviews</h3>
+        <?php
+        for ($i = 0; $i < $num_products; $i++) {
+            $review = isset($product_reviews[$i]) ? $product_reviews[$i] : array();
+            $product_name = isset($review['product_name']) ? $review['product_name'] : '';
+            $product_image_id = isset($review['product_image_id']) ? $review['product_image_id'] : '';
+            $effectiveness = isset($review['effectiveness']) ? $review['effectiveness'] : '';
+            $safety = isset($review['safety']) ? $review['safety'] : '';
+            $price = isset($review['price']) ? $review['price'] : '';
+            $overall_rating = isset($review['overall_rating']) ? $review['overall_rating'] : '';
+            $product_description = isset($review['product_description']) ? $review['product_description'] : '';
+            ?>
+            <div class="product-review" <?php echo $i === 0 ? 'style="border: 2px solid #007cba; padding: 10px;"' : ''; ?>>
+                <h4>Product <?php echo $i + 1; ?><?php echo $i === 0 ? ' (Best Product)' : ''; ?></h4>
+                <p>
+                    <label>Product Name:</label><br>
+                    <input type="text" name="product_reviews[<?php echo $i; ?>][product_name]" value="<?php echo esc_attr($product_name); ?>">
+                </p>
+                <p>
+                    <label>Product Image:</label><br>
+                    <input type="hidden" name="product_reviews[<?php echo $i; ?>][product_image_id]" value="<?php echo esc_attr($product_image_id); ?>">
+                    <button type="button" class="upload_image_button button">Upload Image</button>
+                    <div class="product_image_preview">
+                        <?php if ($product_image_id) echo wp_get_attachment_image($product_image_id, 'thumbnail'); ?>
+                    </div>
+                </p>
+                <p>
+                    <label>Effectiveness:</label><br>
+                    <input type="text" name="product_reviews[<?php echo $i; ?>][effectiveness]" value="<?php echo esc_attr($effectiveness); ?>">
+                </p>
+                <p>
+                    <label>Safety:</label><br>
+                    <input type="text" name="product_reviews[<?php echo $i; ?>][safety]" value="<?php echo esc_attr($safety); ?>">
+                </p>
+                <p>
+                    <label>Price:</label><br>
+                    <input type="text" name="product_reviews[<?php echo $i; ?>][price]" value="<?php echo esc_attr($price); ?>">
+                </p>
+                <p>
+                    <label>Overall Rating:</label><br>
+                    <input type="text" name="product_reviews[<?php echo $i; ?>][overall_rating]" value="<?php echo esc_attr($overall_rating); ?>">
+                </p>
+                <p>
+                    <label>Product Description:</label><br>
+                    <textarea name="product_reviews[<?php echo $i; ?>][product_description]" rows="4" cols="50"><?php echo esc_textarea($product_description); ?></textarea>
+                </p>
+            </div>
+            <?php
+        }
+        ?>
+    </div>
+    <p>
+        <label for="conclusion">Conclusion:</label><br>
+        <textarea id="conclusion" name="conclusion" rows="4" cols="50"><?php echo esc_textarea($conclusion); ?></textarea>
+    </p>
+    <p>
+        <label for="cta_text">CTA Text:</label><br>
+        <input type="text" id="cta_text" name="cta_text" value="<?php echo esc_attr($cta_text); ?>">
+    </p>
+    <p>
+        <label for="cta_link">CTA Link:</label><br>
+        <input type="url" id="cta_link" name="cta_link" value="<?php echo esc_url($cta_link); ?>">
+    </p>
+    <script>
+    jQuery(document).ready(function($) {
+        log_message("jQuery ready function started");
+
+        function updateProductReviews() {
+            var numProducts = $('#num_products').val();
+            var currentReviews = $('#product_reviews .product-review').length;
+
+            log_message("Updating product reviews. New number: " + numProducts + ", Current: " + currentReviews);
+
+            if (numProducts > currentReviews) {
+                for (var i = currentReviews; i < numProducts; i++) {
+                    var newReview = `
+                        <div class="product-review" ${i === 0 ? 'style="border: 2px solid #007cba; padding: 10px;"' : ''}>
+                            <h4>Product ${i + 1}${i === 0 ? ' (Best Product)' : ''}</h4>
+                            <p>
+                                <label>Product Name:</label><br>
+                                <input type="text" name="product_reviews[${i}][product_name]">
+                            </p>
+                            <p>
+                                <label>Product Image:</label><br>
+                                <input type="hidden" name="product_reviews[${i}][product_image_id]">
+                                <button type="button" class="upload_image_button button">Upload Image</button>
+                                <div class="product_image_preview"></div>
+                            </p>
+                            <p>
+                                <label>Effectiveness:</label><br>
+                                <input type="text" name="product_reviews[${i}][effectiveness]">
+                            </p>
+                            <p>
+                                <label>Safety:</label><br>
+                                <input type="text" name="product_reviews[${i}][safety]">
+                            </p>
+                            <p>
+                                <label>Price:</label><br>
+                                <input type="text" name="product_reviews[${i}][price]">
+                            </p>
+                            <p>
+                                <label>Overall Rating:</label><br>
+                                <input type="text" name="product_reviews[${i}][overall_rating]">
+                            </p>
+                            <p>
+                                <label>Product Description:</label><br>
+                                <textarea name="product_reviews[${i}][product_description]" rows="4" cols="50"></textarea>
