@@ -1,3 +1,32 @@
+@font-face {
+    font-family: 'Merriweather';
+    src: url('font/merriweather-all-400-normal.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* @font-face {
+    font-family: 'Merriweather';
+    src: url('font/merriweather-all-700-normal.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Merriweather';
+    src: url('font/merriweather-all-900-normal.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+} */
+
+@font-face {
+    font-family: 'Montserrat';
+    src: url('font/Montserrat-Bold.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+
 body {
     width: 100%;
     height: 100%;
@@ -15,6 +44,20 @@ body {
     font-family: Merriweather, Georgia, serif;
     font-size: 1rem;
     line-height: 1.75;
+}
+
+a {
+	color: #4169e1;
+}
+
+/* a:visited {
+	color: #800080;
+} */
+
+a:hover,
+a:focus,
+a:active {
+	color: #191970 !important;
 }
 
 .site {
@@ -147,23 +190,6 @@ p {
     counter-reset: footnotes;
 }
 
-a:visited {
-    color: #800080;
-}
-
-a {
-    background-color: transparent;
-}
-
-a {
-    color: #4169e1;
-}
-
-a {
-    color: #1f8afa;
-    margin-right: 5px;
-}
-
 body h2 {
     font-family: Merriweather, Georgia, serif;
     font-weight: 700;
@@ -197,6 +223,155 @@ mark, ins {
 mark {
     background: none;
     color: #1f8afa;
+}
+
+.gb-66a13a12b2fea{
+    font-size: 20px;
+}
+
+.wp-block-media-text {
+    box-sizing: border-box;
+    direction: ltr;
+    display: grid;
+    grid-template-columns: 50% 1fr;
+    grid-template-rows: auto;
+}
+
+.wp-block-media-text .wp-block-media-text__content, .wp-block-media-text .wp-block-media-text__media, .wp-block-media-text.is-vertically-aligned-center .wp-block-media-text__content, .wp-block-media-text.is-vertically-aligned-center .wp-block-media-text__media {
+    align-self: center;
+}
+
+.wp-block-media-text .wp-block-media-text__media {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
+}
+
+.wp-block-media-text__media img, .wp-block-media-text__media video {
+    height: auto;
+    max-width: unset;
+    vertical-align: middle;
+    width: 100%;
+}
+
+.wp-block-media-text .wp-block-media-text__content {
+    direction: ltr;
+    grid-column: 2;
+    grid-row: 1;
+    padding: 0 8%;
+    word-break: break-word;
+}
+
+.has-medium-font-size {
+    font-size: var(--wp--preset--font-size--medium) !important;
+}
+
+.has-text-align-left {
+    text-align: left;
+}
+
+.site .site-inner .content-area .site-main .wp-block-buttons {
+    margin: 2em 0 3.75em 0;
+}
+
+.wp-container-core-buttons-layout-1.wp-container-core-buttons-layout-1 {
+    justify-content: center;
+}
+
+.wp-block-buttons.is-content-justification-center {
+    justify-content: center;
+}
+
+body .is-layout-flex {
+    display: flex;
+}
+
+body .is-layout-flex {
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.wp-block-buttons>.wp-block-button.wp-block-button__width-75 {
+    width: calc(75% - var(--wp--style--block-gap, .5em)* .25);
+}
+
+.wp-block-buttons>.wp-block-button.has-custom-width {
+    max-width: none;
+}
+
+.wp-block-button.aligncenter, .wp-block-calendar {
+    text-align: center;
+}
+
+.wp-block-buttons>.wp-block-button {
+    display: inline-block;
+    margin: 0;
+}
+
+body .is-layout-flex > * {
+    margin: 0;
+}
+
+.site .site-inner .content-area .site-main .wp-block-buttons .wp-block-button a.wp-block-button__link {
+    background: #1f8afa;
+    font-family: Montserrat, "Helvetica Neue", sans-serif;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.wp-block-buttons>.wp-block-button.has-custom-font-size .wp-block-button__link {
+    font-size: inherit;
+}
+
+.wp-block-buttons>.wp-block-button.has-custom-width .wp-block-button__link {
+    width: 100%;
+}
+
+.wp-block-button__link {
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-block;
+    text-align: center;
+    word-break: break-word;
+}
+
+.wp-block-button__link {
+    color: #fff;
+    background-color: #32373c;
+    border-radius: 9999px;
+    box-shadow: none;
+    text-decoration: none;
+    padding: calc(.667em + 2px) calc(1.333em + 2px);
+    font-size: 1.125em;
+}
+
+.wp-element-button {
+    cursor: pointer;
+}
+
+.has-text-align-center {
+    text-align: center;
+}
+
+.site .site-inner .content-area .site-main .author-name-wrapper .author {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.site .site-inner .content-area .site-main .author-name-wrapper .author .author-image {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 35px;
+}
+
+.has-medium-font-size {
+    font-size: var(--wp--preset--font-size--medium) !important;
+}
+
+@media only screen and (max-width: 600px) {
+    .gb-66a13a12b2fea{font-size: 14px!important;}
 }
 
 @media only screen and (max-width: 950px) {

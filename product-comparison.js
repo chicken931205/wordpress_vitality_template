@@ -13,13 +13,13 @@ jQuery(document).ready(function($) {
         var documentHeight = $document.height() - $window.height();
         var progress = Math.round((scrollPosition / documentHeight) * 100);        
         
-        if (offsetWhatYouLearn.top < scrollPosition) {
+        if (offsetWhatYouLearn && offsetWhatYouLearn.top < scrollPosition) {
             $whatyoulearn.addClass('fixed');
         } else {
             $whatyoulearn.removeClass('fixed');
         }
 
-        if (offsetNavbar.top < scrollPosition && (scrollPosition - offsetNavbar.top >  20)) {
+        if (offsetNavbar && offsetNavbar.top < scrollPosition && (scrollPosition - offsetNavbar.top > 20)) {
             $navbar.addClass('fixed');
         } else {
             $navbar.removeClass('fixed');

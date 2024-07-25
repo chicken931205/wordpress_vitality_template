@@ -16,172 +16,179 @@ $post_id = get_the_ID();
 <div class="main">
     <div class="lp">
         <div class="section-1">
-            <p class="disclosure-top"><?php echo get_post_meta($post_id, 'disclosure_top', true); ?></p>
-            <h1>We Evaluate: <?php the_title(); ?></h1>
-            <h2><?php echo get_post_meta($post_id, 'subtitle', true); ?></h2>
+            <p class="disclosure-top"><?php echo esc_html(get_post_meta($post_id, 'disclosure_top', true)); ?></p>
+            <h1><?php the_title(); ?></h1>
+            <h2><?php echo esc_html(get_post_meta($post_id, 'subtitle', true)); ?></h2>
 
             <div class="nav-bar">
-                <a href="#benefits"><?php echo get_post_meta($post_id, 'benefits_nav_text', true); ?></a>
-                <a href="#key-ingredients"><?php echo get_post_meta($post_id, 'ingredients_nav_text', true); ?></a>
-                <a href="#top-5"><?php echo get_post_meta($post_id, 'top_5_nav_text', true); ?></a>
+                <a href="#benefits"><?php echo esc_html(get_post_meta($post_id, 'benefits_nav_text', true)); ?></a>
+                <a href="#key-ingredients"><?php echo esc_html(get_post_meta($post_id, 'ingredients_nav_text', true)); ?></a>
+                <a href="#top-5"><?php echo esc_html(get_post_meta($post_id, 'top_5_nav_text', true)); ?></a>
             </div>
 
-            <p class="disclosure"><?php echo get_post_meta($post_id, 'disclosure', true); ?></p>
+            <p class="disclosure"><?php echo esc_html(get_post_meta($post_id, 'disclosure', true)); ?></p>
 
-            <p>
-                <img src="<?php echo get_stylesheet_directory_uri(); ?>/images/cognitive-health-icon.png" alt="Cognitive Health">
-            </p>
+            <?php if (has_post_thumbnail()): ?>
+                <p>
+                    <?php the_post_thumbnail('full', array('class' => 'featured-image')); ?>
+                </p>
+            <?php endif; ?>
             
-            <p>
-                <?php the_content(); ?>
-            </p>
+            <?php the_content(); ?>
 
-            <h3>
-                <img src="<?php echo get_stylesheet_directory_uri(); ?>/images/The-Effect-of-bigger.png">
-            </h3>
+            <?php 
+            $effect_image = get_post_meta($post_id, 'effect_image', true);
+            if ($effect_image): 
+            ?>
+                <h3>
+                    <img src="<?php echo esc_url($effect_image); ?>" alt="The Effect">
+                </h3>
+            <?php endif; ?>
 
             <div id="benefits" class="colored-table green">
-                <h3><?php echo get_post_meta($post_id, 'benefits_title', true); ?></h3>
-                <?php echo get_post_meta($post_id, 'benefits_content', true); ?>
+                <h3><?php echo esc_html(get_post_meta($post_id, 'benefits_title', true)); ?></h3>
+                <?php echo wp_kses_post(wpautop(get_post_meta($post_id, 'benefits_content', true))); ?>
             </div>
 
-            <h3>How To Use A Green Powder</h3>
-            <p>Green powders are the best way to cover all your nutritional bases in one simple scoop.&nbsp;Many people enjoy mixing it with their&nbsp;<b>morning glass of&nbsp;water, tea,&nbsp;or&nbsp;smoothie.</b></p>
-            <p>The combination of superfoods and gut-boosting probiotics can elevate your health and meet your food diversity goal. This simple&nbsp;<b>morning ritual helps customers stay consistent</b>&nbsp;with their green powder intake,&nbsp;<b>producing the&nbsp;best results.</b></p>
+            <div id="usage">
+                <h3><?php echo esc_html(get_post_meta($post_id, 'usage_title', true)); ?></h3>
+                <?php echo wp_kses_post(wpautop(get_post_meta($post_id, 'usage_content', true))); ?>
+            </div>
 
             <div id="key-ingredients" class="colored-table green">
-                <h3><?php echo get_post_meta($post_id, 'ingredients_to_look_for_title', true); ?></h3>
-                <?php echo get_post_meta($post_id, 'ingredients_to_look_for_content', true); ?>
+                <h3><?php echo esc_html(get_post_meta($post_id, 'ingredients_to_look_for_title', true)); ?></h3>
+                <?php echo wp_kses_post(wpautop(get_post_meta($post_id, 'ingredients_to_look_for_content', true))); ?>
             </div>
 
-            <div id="what-to-avoid" class="colored-table red">
-                <h3><?php echo get_post_meta($post_id, 'ingredients_to_avoid_title', true); ?></h3>
-                <?php echo get_post_meta($post_id, 'ingredients_to_avoid_content', true); ?>
+            <div id="ingredients-to-avoid" class="colored-table red">
+                <h3><?php echo esc_html(get_post_meta($post_id, 'ingredients_to_avoid_title', true)); ?></h3>
+                <?php echo wp_kses_post(wpautop(get_post_meta($post_id, 'ingredients_to_avoid_content', true))); ?>
             </div>
 
-            <div class="colored-table blue">
-                <h3><?php echo get_post_meta($post_id, 'considerations_title', true); ?></h3>
-                <?php echo get_post_meta($post_id, 'considerations_content', true); ?>
+            <div id="considerations" class="colored-table blue">
+                <h3><?php echo esc_html(get_post_meta($post_id, 'considerations_title', true)); ?></h3>
+                <?php echo wp_kses_post(wpautop(get_post_meta($post_id, 'considerations_content', true))); ?>
             </div>
 
-            <h3 style="text-align: center;"><?php echo get_post_meta($post_id, 'top_products_title', true); ?></h3>
+            <h3 style="text-align: center;"><?php echo esc_html(get_post_meta($post_id, 'top_products_title', true)); ?></h3>
         </div>
         <div id="top-5" class="section-2">
             <?php
-                $num_products = intval(get_post_meta($post_id, 'num_products', true));
-                for ($i = 1; $i <= $num_products; $i++) {
-                    $product_name = get_post_meta($post_id, "product_{$i}_name", true);
-                    $product_brand = get_post_meta($post_id, "product_{$i}_brand", true);
-                    $product_link = get_post_meta($post_id, "product_{$i}_link", true);
-                    $product_rating_image = get_post_meta($post_id, "product_{$i}_rating_image", true);
-                    $product_image = get_post_meta($post_id, "product_{$i}_image", true);
-                    $product_image_width = get_post_meta($post_id, "product_{$i}_image_width", true);
-                    $product_rating = get_post_meta($post_id, "product_{$i}_rating", true);
-                    $product_grade = get_post_meta($post_id, "product_{$i}_grade", true);
-                    $product_pros = get_post_meta($post_id, "product_{$i}_pros", true);
-                    $product_cons = get_post_meta($post_id, "product_{$i}_cons", true);
-                    $product_bottom_line = get_post_meta($post_id, "product_{$i}_bottom_line", true);
-                    ?>
+            $num_products = intval(get_post_meta($post_id, 'num_products', true));
+            for ($i = 1; $i <= $num_products; $i++):
+                $product_name = get_post_meta($post_id, "product_{$i}_name", true);
+                $product_brand = get_post_meta($post_id, "product_{$i}_brand", true);
+                $product_link = get_post_meta($post_id, "product_{$i}_link", true);
+                $product_image = get_post_meta($post_id, "product_{$i}_image", true);
+                $product_rating_image = get_post_meta($post_id, "product_{$i}_rating_image", true);
+                $product_grade = get_post_meta($post_id, "product_{$i}_grade", true);
+                $product_pros = get_post_meta($post_id, "product_{$i}_pros", true);
+                $product_cons = get_post_meta($post_id, "product_{$i}_cons", true);
+                $product_bottom_line = get_post_meta($post_id, "product_{$i}_bottom_line", true);
+            ?>
             <div class="review test1">
-                <div>&nbsp;</div>
                 <h4>
-                    <a href="#"><?php echo $i; ?>. <span style="color: #0000ff;"><?php echo $product_name; ?> &nbsp;</span>
-                    </a>
-                    <?php if ($i === 1) { ?>
-                        <sup style="top: 0;">
-                            <a href="#">[1]</a>
-                        </sup>
-                    <?php } ?>
+                    <a href="<?php echo esc_url($product_link); ?>"><?php echo $i; ?>. <?php echo esc_html($product_name); ?></a>
+                    <?php if ($i === 1): ?>
+                        <sup><a href="#citations">[1]</a></sup>
+                    <?php endif; ?>
                 </h4>
-                <p class="byline">by 
-                    <span style="color: #800080;">
-                        <a href="#" style="text-decoration: underline;">
-                            <span style="color: #0000ff;"><?php echo $product_brand;?></span>
-                        </a>
-                    </span> 
-                </p>
-                <img src="<?php echo $product_rating_image; ?>" width="118" height="115" alt="hat">
+                <p class="byline">by <a href="<?php echo esc_url($product_link); ?>"><?php echo esc_html($product_brand); ?></a></p>
+                <?php if ($product_rating_image): ?>
+                    <img src="<?php echo esc_url($product_rating_image); ?>" width="118" height="115" alt="rating" class="rating-image">
+                <?php endif; ?>
                 <div class="product-image-box">
-                    <a href="<?php echo $product_link; ?>" style="transition: all 0s ease 0s;">
-                        <img width="<?php echo $product_image_width; ?>" src="<?php echo $product_image; ?>">
+                    <a href="<?php echo esc_url($product_link); ?>">
+                        <?php if ($product_image): ?>
+                            <img src="<?php echo esc_url($product_image); ?>" alt="<?php echo esc_attr($product_name); ?>">
+                        <?php endif; ?>
                     </a>
                 </div>
                 <div class="grade">
-                    <?php echo $product_grade; ?>
+                    <h1><?php echo esc_html($product_grade); ?></h1>
+                    <p>OVERALL GRADE</p>
                 </div>
                 <div class="left">
                     <div class="pros-cons">
                         <h3>PROS</h3>
-                        <?php echo $product_pros; ?>
+                        <?php echo wp_kses_post($product_pros); ?>
                         <h3>CONS</h3>
-                        <?php echo $product_cons; ?>
+                        <?php echo wp_kses_post($product_cons); ?>
                     </div>
                 </div>
                 <div class="right">
-                    <?php echo $product_bottom_line; ?>
+                    <h5>Bottom Line</h5>
+                    <?php echo wp_kses_post(wpautop($product_bottom_line)); ?>
+                    <a href="<?php echo esc_url($product_link); ?>">Visit Website</a>
                 </div>
             </div>
-            <?php } ?>
+            <?php endfor; ?>
         </div>
 
         <div class="section-additional">
-            <div class="citations">
-                <h3><?php echo get_post_meta($post_id, 'citations_title', true); ?></h3>
-                <?php echo wpautop(get_post_meta($post_id, 'citations', true)); ?>
+            <div id="citations" class="citations">
+                <h3><?php echo esc_html(get_post_meta($post_id, 'citations_title', true)); ?></h3>
+                <?php echo wp_kses_post(wpautop(get_post_meta($post_id, 'citations', true))); ?>
             </div>
         </div>
 
         <div class="section-last">
-            <p><a href="#top-5" style="text-decoration: underline;"> <?php echo get_post_meta($post_id, 'back_to_top_text', true); ?> </a></p>
+            <p><a href="#top-5"><?php echo esc_html(get_post_meta($post_id, 'back_to_top_text', true)); ?></a></p>
         </div>
 
         <div class="section-additional">
             <div class="right-sidebar">
                 <div class="right-panel main-sources">
-                    <h2>Our Main Sources</h2>
-                    <p>
-                        <img src="<?php echo get_stylesheet_directory_uri() . '/images/medline-plus-logo.png'; ?>">
-                    </p>
-                    <p>
-                        <img src="<?php echo get_stylesheet_directory_uri() . '/images/healthline-logo.png'; ?>">
-                    </p>
-                    <p>
-                        Sources used for research purposes. Smarter-Reviews.com are not officially affiliated with these sites.
-                    </p>
+                    <h2><?php echo esc_html(get_post_meta($post_id, 'sidebar_1_title', true)); ?></h2>
+                    <?php
+                    $image_1 = get_post_meta($post_id, 'sidebar_1_image_1', true);
+                    $image_2 = get_post_meta($post_id, 'sidebar_1_image_2', true);
+                    if ($image_1): ?>
+                        <p><img src="<?php echo esc_url($image_1); ?>" alt="Source 1"></p>
+                    <?php endif;
+                    if ($image_2): ?>
+                        <p><img src="<?php echo esc_url($image_2); ?>" alt="Source 2"></p>
+                    <?php endif; ?>
+                    <p><?php echo esc_html(get_post_meta($post_id, 'sidebar_1_subtitle', true)); ?></p>
                 </div>
                 <div class="right-panel what-you-learn">
-                    <h2>What You Will Learn:</h2>
+                    <h2><?php echo esc_html(get_post_meta($post_id, 'sidebar_2_title', true)); ?></h2>
                     <div class="reading-time">
                         <div class="reading-progress">
-                            <div class="percent"> 7% </div>
+                            <div class="percent">0%</div>
                             <svg class="progress-circle" width="100%" height="100%">
                                 <circle cx="40" cy="40" r="34"></circle>
                                 <circle cx="40" cy="40" r="34"></circle>
                             </svg>
                         </div>
-                        <p>Estimated Read Time <span id="read-time">5</span> Minutes</p>
+                        <p><?php echo esc_html(get_post_meta($post_id, 'sidebar_2_subtitle', true)); ?> <span id="read-time">5</span> Minutes</p>
                     </div>
                     <hr>
-                    <i class="icon-ok"></i>
-                    <p>
-                        <a href="#benefits">Benefits of a Quality Green Powder</a>
-                    </p>
-                    <i class="icon-ok"></i>
-                    <p>
-                        <a href="#key-ingredients">What To Look For In A Green Powder</a>
-                    </p>
-                    <i class="icon-cancel"></i>
-                    <p>
-                        <a href="#what-to-avoid">What Ingredients To Avoid</a>
-                    </p>
-                    <i class="icon-ok"></i>
-                    <p>
-                        <a href="#top-5">Top 5 Green Powders</a>
-                    </p>
+                    <?php
+                    $sidebar_links = array(
+                        array('title' => 'benefits_title', 'link' => '#benefits', 'icon' => 'sidebar_2_icon_1'),
+                        array('title' => 'usage_title', 'link' => '#usage', 'icon' => 'sidebar_2_icon_2'),
+                        array('title' => 'ingredients_to_look_for_title', 'link' => '#key-ingredients', 'icon' => 'sidebar_2_icon_3'),
+                        array('title' => 'ingredients_to_avoid_title', 'link' => '#ingredients-to-avoid', 'icon' => 'sidebar_2_icon_4'),
+                        array('title' => 'considerations_title', 'link' => '#considerations', 'icon' => 'sidebar_2_icon_5'),
+                        array('title' => 'top_products_title', 'link' => '#top-5', 'icon' => 'sidebar_2_icon_6')
+                    );
+
+                    foreach ($sidebar_links as $link_data):
+                        $title = get_post_meta($post_id, $link_data['title'], true);
+                        $icon = get_post_meta($post_id, $link_data['icon'], true);
+                        $icon_class = ($icon === 'active') ? 'icon-ok' : 'icon-cancel';
+                        if ($title):
+                    ?>
+                        <i class="<?php echo esc_attr($icon_class); ?>"></i>
+                        <p><a href="<?php echo esc_attr($link_data['link']); ?>"><?php echo esc_html($title); ?></a></p>
+                    <?php
+                        endif;
+                    endforeach;
+                    ?>
                 </div>
             </div>
         </div>
-        
     </div>
 </div>
 
